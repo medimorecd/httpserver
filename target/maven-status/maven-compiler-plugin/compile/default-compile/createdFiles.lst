@@ -1,5 +1,8 @@
 com/dmi/httpserver/config/ConfigurationManager.class
-com/dmi/httpserver/config/HttpConfigrationException.class
-com/dmi/httpserver/config/Configration.class
+com/dmi/httpserver/core/HttpConnectionWorkerThread.class
 com/dmi/httpserver/HttpServer.class
+com/dmi/http/HttpParser.class
+com/dmi/httpserver/config/HttpConfigrationException.class
+com/dmi/httpserver/core/ServerListenerThread.class
 com/dmi/httpserver/util/Json.class
+com/dmi/httpserver/config/Configuration.class
