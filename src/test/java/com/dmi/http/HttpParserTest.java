@@ -1,6 +1,7 @@
 package com.dmi.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -30,7 +31,11 @@ class HttpParserTest {
             fail(e);
         }
 
+        assertNotNull(request);
         assertEquals(request.getMethod(), HttpMethod.GET);
+        assertEquals(request.getRequestTarget(), "/");
+        assertEquals(request.getOriginalHttpVersion(), "HTTP/1.1");
+        assertEquals(request.getBestCompatibleHttpVersion(), HttpVersion.HTTP_1_1);
     }
 
     @Test
@@ -80,6 +85,38 @@ class HttpParserTest {
             fail();
         } catch (HttpParsingException e) {
             assertEquals(e.getErrorCode(), HttpStatusCode.CLIENT_ERROR_400_BAD_REQUEST);
+        }
+    }
+
+    @Test
+    void shouldHandleBadHttpVersion() {
+        try {
+            HttpRequest request = httpParser.parseHttpRequest(generateBadHttpVersionTestCase());
+            fail();
+        } catch (HttpParsingException e) {
+            assertEquals(e.getErrorCode(), HttpStatusCode.CLIENT_ERROR_400_BAD_REQUEST);
+        }
+    }
+
+    @Test
+    void shouldHandleUnsupportedHttpVersion() {
+        try {
+            HttpRequest request = httpParser.parseHttpRequest(generateUnsupportedHttpVersionTestCase());
+            fail();
+        } catch (HttpParsingException e) {
+            assertEquals(e.getErrorCode(), HttpStatusCode.SERVER_ERROR_505_HTTP_VERSION_NOT_SUPPORTED);
+        }
+    }
+
+    @Test
+    void shouldHandleSupportedHttpVersion() {
+        try {
+            HttpRequest request = httpParser.parseHttpRequest(generateSupportedHttpVersionTestCase());
+            assertNotNull(request);
+            assertEquals(request.getBestCompatibleHttpVersion(), HttpVersion.HTTP_1_1);
+            assertEquals(request.getOriginalHttpVersion(), "HTTP/1.2");
+        } catch (HttpParsingException e) {
+            fail();
         }
     }
 
@@ -144,6 +181,36 @@ class HttpParserTest {
 
     private InputStream generateBadTestCaseEmptyRequestLine() {
         String rawData = "\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Accept-Language: en-US,en;q=0.5\r\n" +
+                "Priority: u=0, i\r\n";
+
+        InputStream inputStream = new ByteArrayInputStream(rawData.getBytes(StandardCharsets.US_ASCII));
+        return inputStream;
+    }
+
+    private InputStream generateBadHttpVersionTestCase() {
+        String rawData = "GET / HTTp/1.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Accept-Language: en-US,en;q=0.5\r\n" +
+                "Priority: u=0, i\r\n";
+
+        InputStream inputStream = new ByteArrayInputStream(rawData.getBytes(StandardCharsets.US_ASCII));
+        return inputStream;
+    }
+
+    private InputStream generateUnsupportedHttpVersionTestCase() {
+        String rawData = "GET / HTTP/2.1\r\n" +
+                "Host: localhost:8080\r\n" +
+                "Accept-Language: en-US,en;q=0.5\r\n" +
+                "Priority: u=0, i\r\n";
+
+        InputStream inputStream = new ByteArrayInputStream(rawData.getBytes(StandardCharsets.US_ASCII));
+        return inputStream;
+    }
+
+    private InputStream generateSupportedHttpVersionTestCase() {
+        String rawData = "GET / HTTP/1.2\r\n" +
                 "Host: localhost:8080\r\n" +
                 "Accept-Language: en-US,en;q=0.5\r\n" +
                 "Priority: u=0, i\r\n";
